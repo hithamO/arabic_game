@@ -79,10 +79,10 @@ export const CONFIG = {
 
   // إعدادات Firebase — انسخها من Firebase Console (راجع README.md)
   firebase: {
-    apiKey: '',
-    authDomain: '',
-    databaseURL: '',
-    projectId: '',
-    appId: ''
+    apiKey: 'AIzaSyBEA-GcVnkN58MYFPKdjTTO4AQ56G2v1dY',
+    authDomain: 'arabic-game-12611.firebaseapp.com',
+    databaseURL: 'https://arabic-game-12611-default-rtdb.firebaseio.com',
+    projectId: 'arabic-game-12611',
+    appId: '1:425177312561:web:c9b9dcc9343b0b32215410'
   }
 };
