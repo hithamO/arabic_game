@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2B2163">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>مملكة الجُمل — الجملة الاسمية والفعلية</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Tajawal:wght@500;800&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="modulepreload" href="js/app.js">
+</head>
+<body class="student">
+
+  <!-- الخلفية المتحركة (خفيفة جداً) -->
+  <div id="sky" class="sky" data-scene="dusk" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="sun"></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div id="landmark" class="landmark"></div>
+    <svg class="dunes dunes-back" viewBox="0 0 2400 200" preserveAspectRatio="none">
+      <path d="M0 120 Q150 60 300 100 T600 90 T900 110 T1200 120 Q1350 60 1500 100 T1800 90 T2100 110 T2400 120 V200 H0Z"/>
+    </svg>
+    <svg class="dunes dunes-front" viewBox="0 0 2400 200" preserveAspectRatio="none">
+      <path d="M0 140 Q200 80 400 130 T800 120 T1200 140 Q1400 80 1600 130 T2000 120 T2400 140 V200 H0Z"/>
+    </svg>
+  </div>
+
+  <main id="app">
+
+    <!-- تحميل -->
+    <section id="s-boot" class="screen center active" aria-live="polite">
+      <div class="loader" aria-hidden="true"></div>
+      <p class="on-sky">جارٍ تجهيز المملكة…</p>
+    </section>
+
+    <!-- الترحيب -->
+    <section id="s-welcome" class="screen center">
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 320 190">
+          <path d="M40 190 V92 L60 72 L80 92 V190Z" fill="#E9A94F"/>
+          <path d="M240 190 V92 L260 72 L280 92 V190Z" fill="#E9A94F"/>
+          <rect x="70" y="84" width="180" height="106" fill="#F7CD84"/>
+          <path d="M70 84 h20 v-12 h20 v12 h20 v-12 h20 v12 h20 v-12 h20 v12 h20 v-12 h20 v12 h20 v-12 h20 v12" fill="#F7CD84"/>
+          <path d="M92 190 V138 Q92 112 116 112 Q140 112 140 138 V190Z" fill="#1F7FC0"/>
+          <path d="M180 190 V138 Q180 112 204 112 Q228 112 228 138 V190Z" fill="#E0600F"/>
+          <text x="116" y="160" text-anchor="middle" font-size="22" fill="#fff" font-family="Tajawal, sans-serif" font-weight="800">اسم</text>
+          <text x="204" y="160" text-anchor="middle" font-size="22" fill="#fff" font-family="Tajawal, sans-serif" font-weight="800">فعل</text>
+          <path d="M160 20 V58" stroke="#8A4B1F" stroke-width="4"/>
+          <path d="M160 22 L196 30 L160 40Z" fill="#E5484D"/>
+          <circle cx="160" cy="70" r="12" fill="#FFC53D"/>
+        </svg>
+      </div>
+      <h1 class="logo">مملكة الجُمل</h1>
+      <p class="tagline">مغامرة الجملة الاسمية والجملة الفعلية</p>
+      <button id="btn-start" class="btn btn-gold btn-xl">ابدأ المغامرة</button>
+      <p id="welcome-room" class="room-chip" hidden></p>
+    </section>
+
+    <!-- اختيار الشخصية -->
+    <section id="s-avatar" class="screen center">
+      <h2 class="screen-title on-sky">اختر شخصيتك</h2>
+      <div id="avatar-grid" class="avatar-grid" role="radiogroup" aria-label="الشخصيات"></div>
+      <button id="btn-avatar-next" class="btn btn-gold btn-lg" disabled>التالي</button>
+    </section>
+
+    <!-- كتابة الاسم -->
+    <section id="s-name" class="screen center">
+      <form id="name-form" class="card name-card" novalidate autocomplete="off">
+        <div class="name-head">
+          <div id="name-avatar" class="big-av"></div>
+          <button type="button" id="btn-change-avatar" class="link-btn">تغيير الشخصية</button>
+        </div>
+        <label class="field-label" for="inp-name">ما اسمك؟</label>
+        <input id="inp-name" class="field" type="text" maxlength="16" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="اكتب اسمك الأول">
+        <div id="code-field" hidden>
+          <label class="field-label" for="inp-code">رمز الغرفة</label>
+          <input id="inp-code" class="field field-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4 أرقام">
+        </div>
+        <p id="name-error" class="form-error" role="alert"></p>
+        <button id="btn-join" type="submit" class="btn btn-gold btn-xl">ادخل الغرفة</button>
+      </form>
+    </section>
+
+    <!-- غرفة الانتظار -->
+    <section id="s-wait" class="screen center">
+      <div class="card wait-card">
+        <div id="wait-avatar" class="big-av bob"></div>
+        <h2 id="wait-hello" class="wait-hello"></h2>
+        <p class="lead">أنت جاهز للتحدي!</p>
+        <p id="wait-status" class="waiting-dots">بانتظار المعلم لبدء اللعبة</p>
+        <p class="ready-count">جاهزون الآن: <strong id="wait-count">…</strong></p>
+        <div id="wait-crowd" class="crowd" aria-hidden="true"></div>
+        <p id="wait-note" class="note"></p>
+      </div>
+    </section>
+
+    <!-- اللعب -->
+    <section id="s-play" class="screen play">
+      <header class="hud">
+        <div class="pill timer" aria-label="الوقت"><span aria-hidden="true">⏱</span><span id="hud-time">0:00</span></div>
+        <ol id="map" class="map" aria-label="خريطة المراحل"></ol>
+        <div class="hud-end">
+          <div class="pill points" aria-label="النقاط"><span aria-hidden="true">★</span><span id="hud-points">0</span></div>
+          <button id="btn-sound" class="icon-btn" type="button" aria-label="تشغيل أو كتم الصوت">🔊</button>
+        </div>
+      </header>
+      <div id="stage" class="stage"></div>
+      <div id="walker" class="walker" aria-hidden="true"><div class="walker-inner"></div><div id="bubble" class="bubble"></div></div>
+      <div id="fx" class="fx" aria-hidden="true"></div>
+    </section>
+
+    <!-- نتيجة الطالب -->
+    <section id="s-done" class="screen center">
+      <div class="card result-card">
+        <div id="done-avatar" class="big-av cheer"></div>
+        <h2 id="done-title" class="result-title"></h2>
+        <div class="stats">
+          <div class="stat"><span id="done-score" class="stat-v"></span><span class="stat-l">النتيجة</span></div>
+          <div class="stat"><span id="done-acc" class="stat-v"></span><span class="stat-l">الدقة</span></div>
+          <div class="stat"><span id="done-time" class="stat-v"></span><span class="stat-l">الوقت</span></div>
+          <div class="stat stat-rank"><span id="done-rank" class="stat-v">…</span><span class="stat-l">الترتيب الحالي</span></div>
+        </div>
+        <p id="done-points" class="done-points"></p>
+        <p class="waiting-dots">بانتظار انتهاء بقية اللاعبين</p>
+      </div>
+    </section>
+
+    <!-- النتائج النهائية -->
+    <section id="s-final" class="screen final">
+      <h2 class="screen-title on-sky">النتائج النهائية</h2>
+      <div id="podium" class="podium"></div>
+      <div id="my-final" class="my-final"></div>
+      <div class="card board-card">
+        <ol id="final-list" class="rank-list"></ol>
+      </div>
+      <p class="note on-sky">شكراً لمشاركتك! انتظر المعلم لجولة جديدة.</p>
+    </section>
+
+    <!-- رسائل -->
+    <section id="s-msg" class="screen center">
+      <div class="card msg-card">
+        <div id="msg-icon" class="msg-icon" aria-hidden="true"></div>
+        <h2 id="msg-title"></h2>
+        <p id="msg-text"></p>
+        <button id="msg-btn" class="btn btn-gold btn-lg" hidden></button>
+        <a id="msg-link" class="link-btn" hidden></a>
+      </div>
+    </section>
+  </main>
+
+  <!-- الطبقات العلوية -->
+  <div id="ov-countdown" class="overlay ov-countdown" hidden>
+    <div id="cd-num" class="cd-num">3</div>
+    <p class="cd-sub">استعد…</p>
+  </div>
+
+  <div id="ov-stage" class="overlay ov-stage" hidden>
+    <div class="intro">
+      <div class="intro-track">
+        <ol id="intro-map" class="map map-big"></ol>
+      </div>
+      <p id="intro-kicker" class="intro-kicker"></p>
+      <h2 id="intro-title" class="intro-title"></h2>
+      <p id="intro-hint" class="intro-hint"></p>
+      <button id="intro-go" class="btn btn-gold btn-lg">انطلق</button>
+    </div>
+  </div>
+
+  <div id="ov-pause" class="overlay ov-msg" hidden>
+    <div class="card msg-card">
+      <div class="msg-icon" aria-hidden="true">⏸️</div>
+      <h2>توقف مؤقت</h2>
+      <p>أوقف المعلم اللعبة قليلاً. الوقت متوقف أيضاً.</p>
+    </div>
+  </div>
+
+  <div id="ov-end" class="overlay ov-msg" hidden>
+    <div class="card msg-card end-card">
+      <div class="msg-icon" aria-hidden="true">🏁</div>
+      <h2>انتهت الجولة</h2>
+      <p>أنهى المعلم اللعبة. لنرَ النتائج!</p>
+    </div>
+  </div>
+
+  <div id="net-banner" class="net-banner" role="status" hidden>انقطع الاتصال… تابع اللعب، وسنحفظ إجاباتك عند عودة الإنترنت</div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

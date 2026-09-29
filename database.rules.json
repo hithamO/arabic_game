@@ -1,0 +1,74 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "teachers": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
+    "sessions": {
+      "$code": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('teachers').child(auth.uid).val() === true && (!data.exists() || data.child('meta/owner').val() === auth.uid)",
+        ".validate": "$code.matches(/^[0-9]{4}$/)",
+
+        "meta": {
+          ".read": "auth != null",
+          ".validate": "newData.hasChildren(['owner', 'status', 'round', 'total', 'countdownMs', 'pausedMs']) && newData.child('owner').val() === auth.uid",
+          "owner": { ".validate": "newData.isString()" },
+          "title": { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "status": { ".validate": "newData.isString() && newData.val().matches(/^(waiting|playing|paused|finished)$/)" },
+          "round": { ".validate": "newData.isNumber() && newData.val() >= 1" },
+          "total": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 200" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "startedAt": { ".validate": "newData.isNumber()" },
+          "countdownMs": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000" },
+          "pausedAt": { ".validate": "newData.isNumber()" },
+          "pausedMs": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+          "endedAt": { ".validate": "newData.isNumber()" },
+          "timeLimitMs": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+          "$other": { ".validate": false }
+        },
+
+        "students": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && newData.exists() && root.child('sessions').child($code).child('meta').exists() && (data.exists() || root.child('sessions').child($code).child('meta/status').val() === 'waiting' || root.child('sessions').child($code).child('meta/status').val() === 'playing')",
+            ".validate": "newData.hasChildren(['name', 'avatar', 'joinedAt', 'round', 'correct', 'answered', 'points', 'stage', 'finished'])",
+
+            "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20" },
+            "avatar": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7" },
+            "online": { ".validate": "newData.isBoolean()" },
+            "joinedAt": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || newData.val() === now || root.child('sessions').child($code).child('meta/owner').val() === auth.uid)" },
+            "round": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || newData.val() === root.child('sessions').child($code).child('meta/round').val() || root.child('sessions').child($code).child('meta/owner').val() === auth.uid)" },
+            "startAt": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && (newData.val() === 0 || newData.val() === now)))" },
+            "po": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && (newData.val() === 0 || newData.val() === root.child('sessions').child($code).child('meta/pausedMs').val())))" },
+            "answered": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= root.child('sessions').child($code).child('meta/total').val() && ((data.exists() && newData.val() === data.val()) || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && newData.val() === 0) || (data.exists() && newData.val() === data.val() + 1 && root.child('sessions').child($code).child('meta/status').val() === 'playing'))" },
+            "correct": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= newData.parent().child('answered').val() && ((data.exists() && newData.val() === data.val()) || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && newData.val() === 0) || (data.exists() && newData.val() === data.val() + 1 && newData.parent().child('answered').val() === data.parent().child('answered').val() + 1))" },
+            "points": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= newData.parent().child('correct').val() * 150" },
+            "stage": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" },
+            "finished": { ".validate": "newData.isBoolean() && (newData.val() === false || newData.parent().child('answered').val() === root.child('sessions').child($code).child('meta/total').val())" },
+            "lastAt": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || newData.val() === now || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && newData.val() === 0))" },
+            "pz": { ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || root.child('sessions').child($code).child('meta/owner').val() === auth.uid || (!data.exists() && newData.val() === 0) || newData.val() === root.child('sessions').child($code).child('meta/pausedMs').val())" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "answers": {
+          "$uid": {
+            ".read": "auth != null && (auth.uid === $uid || root.child('sessions').child($code).child('meta/owner').val() === auth.uid)",
+            "$i": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists()",
+              ".validate": "$i.matches(/^[0-9]{1,3}$/) && newData.isNumber() && (newData.val() === 0 || newData.val() === 1) && root.child('sessions').child($code).child('meta/status').val() === 'playing' && root.child('sessions').child($code).child('students').child($uid).exists()"
+            }
+          }
+        },
+
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

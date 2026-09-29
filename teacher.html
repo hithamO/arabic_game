@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1E1640">
+  <meta name="robots" content="noindex">
+  <title>لوحة المعلم — مملكة الجُمل</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧑‍🏫</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Tajawal:wght@500;800&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/teacher.css">
+  <script src="js/vendor/qrcode.min.js" defer></script>
+</head>
+<body class="teacher">
+
+  <!-- التحميل -->
+  <section id="t-boot" class="t-center">
+    <div class="loader dark"></div>
+    <p>جارٍ تحميل لوحة المعلم…</p>
+  </section>
+
+  <!-- رسالة عامة -->
+  <section id="t-msg" class="t-center" hidden>
+    <div class="t-card narrow">
+      <div id="t-msg-icon" class="big-icon">🛠️</div>
+      <h1 id="t-msg-title"></h1>
+      <p id="t-msg-text"></p>
+      <div id="t-msg-actions" class="row-center"></div>
+    </div>
+  </section>
+
+  <!-- تسجيل الدخول -->
+  <section id="t-login" class="t-center" hidden>
+    <form id="login-form" class="t-card narrow" novalidate>
+      <div class="big-icon">🧑‍🏫</div>
+      <h1>لوحة المعلم</h1>
+      <p class="muted">هذه الصفحة للمعلم فقط. سجّل الدخول بالحساب الذي أنشأته في Firebase.</p>
+      <label class="field">
+        <span>البريد الإلكتروني</span>
+        <input id="login-email" type="email" dir="ltr" autocomplete="username" required>
+      </label>
+      <label class="field">
+        <span>كلمة المرور</span>
+        <input id="login-pass" type="password" dir="ltr" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="t-error" role="alert" hidden></p>
+      <button id="login-btn" class="btn btn-ink btn-block" type="submit">دخول</button>
+    </form>
+  </section>
+
+  <!-- حساب غير مصرّح له -->
+  <section id="t-denied" class="t-center" hidden>
+    <div class="t-card narrow">
+      <div class="big-icon">🔐</div>
+      <h1>الحساب غير مفعّل كمعلم بعد</h1>
+      <p>تم تسجيل الدخول، لكن هذا الحساب لم يُضف إلى قائمة المعلمين في قاعدة البيانات.</p>
+      <p class="muted">انسخ الرمز التالي (UID) وأضفه في Firebase داخل <b>teachers</b> بقيمة <b>true</b> كما في ملف README:</p>
+      <div class="uid-box"><code id="denied-uid" dir="ltr"></code><button id="copy-uid" class="btn btn-light btn-sm" type="button">نسخ</button></div>
+      <div class="row-center">
+        <button id="denied-retry" class="btn btn-ink" type="button">أضفته، أعد المحاولة</button>
+        <button id="denied-out" class="btn btn-light" type="button">تسجيل الخروج</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- إنشاء غرفة -->
+  <section id="t-home" class="t-center" hidden>
+    <form id="create-form" class="t-card narrow" novalidate>
+      <div class="big-icon">🏰</div>
+      <h1>غرفة لعب جديدة</h1>
+      <p class="muted">أنشئ غرفة، ثم اعرض رمز QR للطلاب ليدخلوا من أجهزتهم.</p>
+      <label class="field">
+        <span>عنوان الغرفة (يظهر للطلاب)</span>
+        <input id="create-title" type="text" maxlength="40">
+      </label>
+      <p id="create-error" class="t-error" role="alert" hidden></p>
+      <button id="create-btn" class="btn btn-green btn-block" type="submit">إنشاء الغرفة</button>
+      <p class="who muted"><span id="home-email"></span> · <button class="link-btn" type="button" data-signout>تسجيل الخروج</button></p>
+    </form>
+  </section>
+
+  <!-- لوحة التحكم -->
+  <section id="t-room" hidden>
+    <header class="t-head">
+      <div class="t-head-main">
+        <div>
+          <p class="t-kicker">لوحة المعلم · <span id="room-game"></span></p>
+          <h1 id="room-title">الجملة الاسمية والفعلية</h1>
+        </div>
+        <div class="code-box" title="رمز الغرفة">
+          <span>رمز الغرفة</span>
+          <strong id="room-code" dir="ltr">----</strong>
+        </div>
+      </div>
+      <div class="t-head-actions">
+        <span id="room-status" class="chip">—</span>
+        <button id="btn-qr" class="btn btn-gold btn-sm" type="button">▦ عرض QR</button>
+        <button id="btn-copy" class="btn btn-light btn-sm" type="button">🔗 نسخ الرابط</button>
+        <button id="btn-menu" class="btn btn-light btn-sm" type="button" aria-haspopup="true" aria-expanded="false">⋯ المزيد</button>
+        <div id="menu" class="menu" hidden>
+          <button type="button" data-act="csv">⬇️ تنزيل النتائج (CSV)</button>
+          <button type="button" data-act="reset">🧹 إفراغ الغرفة من الطلاب</button>
+          <button type="button" data-act="newroom">🆕 غرفة جديدة برمز جديد</button>
+          <button type="button" data-signout>🚪 تسجيل الخروج</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="demo-note" class="t-note" hidden>
+      🧪 <b>وضع التجربة:</b> يعمل على هذا الجهاز فقط. افتح رابط الطالب في تبويبات جديدة لتجربة عدة طلاب.
+      <a id="demo-open" href="#" target="_blank" rel="noopener">فتح تبويب طالب ↗</a>
+    </div>
+
+    <!-- أزرار التحكم -->
+    <section class="controls" aria-label="التحكم باللعبة">
+      <button id="c-start" class="btn btn-green btn-lg" type="button">▶ ابدأ اللعبة</button>
+      <button id="c-pause" class="btn btn-light btn-lg" type="button">⏸ إيقاف مؤقت</button>
+      <button id="c-resume" class="btn btn-blue btn-lg" type="button">▶ استئناف</button>
+      <button id="c-finish" class="btn btn-red btn-lg" type="button">⏹ إنهاء اللعبة وإظهار النتائج</button>
+      <button id="c-results" class="btn btn-gold btn-lg" type="button">🏆 إظهار النتائج</button>
+      <button id="c-round" class="btn btn-ink btn-lg" type="button">🔁 جولة جديدة</button>
+    </section>
+
+    <div id="all-done" class="t-note ok" hidden>✅ أنهى جميع الطلاب اللعبة — يمكنك الضغط على «إنهاء اللعبة وإظهار النتائج».</div>
+    <div id="dup-warn" class="t-note warn" hidden></div>
+
+    <!-- الإحصاءات -->
+    <section class="t-stats" aria-label="إحصاءات">
+      <div class="t-stat"><b id="st-joined">0</b><span>دخلوا الغرفة</span></div>
+      <div class="t-stat"><b id="st-playing">0</b><span>يلعبون الآن</span></div>
+      <div class="t-stat"><b id="st-finished">0</b><span>أنهوا</span></div>
+      <div class="t-stat"><b id="st-avg" dir="ltr">—</b><span>متوسط النتيجة</span></div>
+      <div class="t-stat"><b id="st-avgtime" dir="ltr">—</b><span>متوسط الوقت (لمن أنهى)</span></div>
+      <div class="t-stat"><b id="st-clock" dir="ltr">0:00</b><span id="st-clock-l">زمن الجولة</span></div>
+    </section>
+
+    <!-- الطلاب -->
+    <section class="t-card t-students">
+      <div class="t-sec-head">
+        <h2 id="list-title">الطلاب</h2>
+        <span id="list-sub" class="muted"></span>
+      </div>
+      <div id="lobby" class="lobby"></div>
+      <div id="table-wrap" class="table-wrap" hidden>
+        <table class="t-table">
+          <thead>
+            <tr>
+              <th>#</th><th>الطالب</th><th>التقدم</th><th>الصحيحة</th><th>الوقت</th><th>النقاط</th><th><span class="sr">إجراءات</span></th>
+            </tr>
+          </thead>
+          <tbody id="t-body"></tbody>
+        </table>
+      </div>
+      <p id="empty" class="empty">لا يوجد طلاب بعد. اعرض رمز QR ليدخل الطلاب.</p>
+    </section>
+  </section>
+
+  <!-- نافذة QR -->
+  <div id="ov-qr" class="t-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <div class="qr-card">
+      <button class="close-x" type="button" data-close aria-label="إغلاق">✕</button>
+      <h2 id="qr-title">امسح الرمز لتدخل اللعبة</h2>
+      <div id="qr-img" class="qr-img"></div>
+      <p class="qr-code-line">أو ادخل الرابط واكتب الرمز: <strong id="qr-code" dir="ltr"></strong></p>
+      <p id="qr-link" class="qr-link" dir="ltr"></p>
+      <p class="muted qr-count">جاهزون الآن: <b id="qr-count">0</b></p>
+    </div>
+  </div>
+
+  <!-- لوحة النتائج (للعرض على الشاشة الكبيرة) -->
+  <div id="ov-board" class="board-view" hidden role="dialog" aria-modal="true" aria-labelledby="board-title">
+    <div id="sky" class="sky" data-scene="castle" aria-hidden="true">
+      <div class="stars"></div>
+      <div class="sun"></div>
+      <div class="cloud c1"></div><div class="cloud c2"></div>
+      <svg class="dunes dunes-back" viewBox="0 0 2400 200" preserveAspectRatio="none">
+        <path d="M0 120 Q150 60 300 100 T600 90 T900 110 T1200 120 Q1350 60 1500 100 T1800 90 T2100 110 T2400 120 V200 H0Z"/>
+      </svg>
+      <svg class="dunes dunes-front" viewBox="0 0 2400 200" preserveAspectRatio="none">
+        <path d="M0 140 Q200 80 400 130 T800 120 T1200 140 Q1400 80 1600 130 T2000 120 T2400 140 V200 H0Z"/>
+      </svg>
+    </div>
+    <div class="board-inner">
+      <button class="close-x light" type="button" data-close aria-label="إغلاق">✕</button>
+      <h2 id="board-title" class="board-title">🏆 النتائج</h2>
+      <p id="board-sub" class="board-sub"></p>
+      <div id="board-podium" class="podium"></div>
+      <div class="board-card t-board-list">
+        <ol id="board-list" class="rank-list"></ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <noscript><p style="padding:20px;text-align:center">يجب تفعيل JavaScript لتعمل لوحة المعلم.</p></noscript>
+  <script type="module" src="js/teacher.js"></script>
+</body>
+</html>
