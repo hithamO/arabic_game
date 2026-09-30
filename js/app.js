@@ -2,18 +2,20 @@
 //  صفحة الطالب
 // =====================================================================
 import { CONFIG } from './config.js';
-import { QUESTIONS } from './questions.js';
+import * as Q from './questions.js?v=2';
 import {
   buildGame, pointsFor, rankStudents, formatTime, sanitizeName, esc, studentsLabel,
-  liveElapsed, studentTimeMs, gameBase, totalQuestions, stageBounds
-} from './game.js';
+  liveElapsed, studentTimeMs, gameBase, totalQuestions, stageBounds, mergeStages
+} from './game.js?v=2';
 import { connect, makeApi, P, isDemo, isConfigured } from './firebase.js';
 import { AVATARS, avatarSVG } from './avatars.js';
 import * as sound from './sound.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const STAGES = CONFIG.stages;
+const QUESTIONS = Q.QUESTIONS;
+const LESSON = Q.LESSON || null; // نصوص الدرس الحالي (من questions.js)
+const STAGES = mergeStages(CONFIG.stages, LESSON);
 const BOUNDS = stageBounds(STAGES);
 const TOTAL = totalQuestions(STAGES);
 const SCENES = ['oasis', 'gates', 'well', 'race', 'castle'];
@@ -100,6 +102,7 @@ async function boot() {
   bindUI();
   updateSoundBtn();
   setScene('dusk');
+  applyLessonTexts();
   const prof = loadProfile();
   if (prof) { S.name = prof.name || ''; if (prof.avatar >= 0 && prof.avatar < AVATARS.length) S.avatar = prof.avatar; }
 
@@ -132,6 +135,19 @@ async function boot() {
   }
   S.phase = 'welcome';
   show('s-welcome');
+}
+
+// نصوص شاشة الترحيب حسب الدرس الحالي
+function applyLessonTexts() {
+  if (!LESSON) return;
+  if (LESSON.subtitle) $('tagline').textContent = LESSON.subtitle;
+  if (LESSON.title) document.title = `${CONFIG.gameTitle} — ${LESSON.title}`;
+  const g = LESSON.heroGates || [];
+  [['hero-g1', g[0]], ['hero-g2', g[1]]].forEach(([id, t]) => {
+    if (!t) return;
+    $(id).textContent = t;
+    if (t.length > 3) $(id).setAttribute('font-size', t.length > 4 ? '16' : '19');
+  });
 }
 
 function bindUI() {
@@ -362,7 +378,7 @@ function onStudents() {
 // ---------------------------------------------------------------- اللعب
 function ensureGame() {
   if (S.game) return;
-  S.game = buildGame(`${S.code}|${S.b.uid}|${S.me.round}`, QUESTIONS, STAGES);
+  S.game = buildGame(`${S.code}|${S.b.uid}|${S.me.round}`, QUESTIONS, STAGES, LESSON);
   S.idx = Math.min(S.me.answered | 0, S.game.length);
   S.correct = S.me.correct | 0;
   S.points = S.me.points | 0;
@@ -522,20 +538,25 @@ function sentenceHTML(text, small) {
 
 const CHIP = { noun: '◆', verb: '⚡', harf: '✦' };
 function optClass(o) {
+  if (LESSON && LESSON.styles) return LESSON.styles[o] ? LESSON.styles[o][0] : 'plain';
   if (o === 'اسمية' || o === 'اسم') return 'noun';
   if (o === 'فعلية' || o === 'فعل') return 'verb';
   if (o === 'حرف') return 'harf';
   return 'plain';
 }
+function optChip(o) {
+  if (LESSON && LESSON.styles) return LESSON.styles[o] ? LESSON.styles[o][1] : '';
+  return CHIP[optClass(o)] || '';
+}
 
 function optionsHTML(item) {
-  const long = item.options.some(o => o.length > 14);
+  const long = item.options.some(o => o.length > 22) || (item.options.length !== 3 && item.options.some(o => o.length > 14));
   const cols = long ? 'opts-col' : item.options.length === 3 ? 'opts-3' : item.options.length === 2 ? 'opts-2' : 'opts-col';
   return `<div class="options ${cols}">` + item.options.map((o, i) => {
     const c = optClass(o);
     const isSentence = c === 'plain' && /\s/.test(o) && /[.؟]$/.test(o);
     return `<button type="button" class="opt ${c}${isSentence ? ' sentence-opt' : ''}" data-i="${i}">
-      ${c !== 'plain' ? `<span class="chip" aria-hidden="true">${CHIP[c]}</span>` : ''}<span>${esc(o)}</span><span class="mark" aria-hidden="true"></span></button>`;
+      ${c !== 'plain' ? `<span class="chip" aria-hidden="true">${optChip(o)}</span>` : ''}<span>${esc(o)}</span><span class="mark" aria-hidden="true"></span></button>`;
   }).join('') + '</div>';
 }
 
@@ -554,9 +575,10 @@ function renderQuestion() {
       <div class="banner"><div class="board">${sentenceHTML(item.text)}</div></div>
       <div class="gates">${item.options.map((o, i) => {
         const c = optClass(o);
-        return `<button type="button" class="gate ${c}" data-i="${i}" aria-label="الجملة ${esc(o)}">
+        const label = LESSON ? esc(o) : `الجملة ${esc(o)}`;
+        return `<button type="button" class="gate ${c}" data-i="${i}" aria-label="${label}">
           <div class="arch"><div class="arch-in"><span class="door a"></span><span class="door b"></span></div></div>
-          <span class="gate-label">${CHIP[c]} الجملة ${esc(o)}</span><span class="mark" aria-hidden="true"></span></button>`;
+          <span class="gate-label">${optChip(o)} ${label}</span><span class="mark" aria-hidden="true"></span></button>`;
       }).join('')}</div>
       <p class="explain" aria-live="polite"></p></div>`;
   } else if (item.kind === 'speed') {
@@ -660,6 +682,7 @@ function feedback(item, btn, ok, pts) {
 function highlightKey(item) {
   const sentence = $('stage').querySelector('.sentence');
   if (!sentence) return;
+  if (LESSON) return highlightLesson(item, sentence);
   let span = null, cls = null, tag = null;
   const isType = item.options.length === 2 && item.options.includes('اسمية') && item.options.includes('فعلية');
   if (item.kind === 'first') {
@@ -676,6 +699,26 @@ function highlightKey(item) {
   if (!span || !cls) return;
   span.classList.add('key', cls);
   span.insertAdjacentHTML('beforeend', `<span class="tag">${tag}</span>`);
+}
+
+// وضع الدرس: وسم أجزاء التركيب (ظرف + مضاف إليه، جار + مجرور، موصوف + صفة)
+function highlightLesson(item, sentence) {
+  const words = [...sentence.querySelectorAll('.w')];
+  if (!words.length) return;
+  const mark = (span, cls, tag) => {
+    if (!span || span.classList.contains('key')) return;
+    span.classList.add('key', cls);
+    span.insertAdjacentHTML('beforeend', `<span class="tag">${esc(tag)}</span>`);
+  };
+  const parts = LESSON.parts || {};
+  const type = parts[item.answer] ? item.answer : (item.of && parts[item.of] ? item.of : null);
+  if (type) {
+    const cls = optClass(type);
+    parts[type].forEach((tag, k) => mark(words[item.at + k], cls === 'plain' ? 'noun' : cls, tag));
+    return;
+  }
+  const whole = LESSON.wholeTags && LESSON.wholeTags[item.answer];
+  if (whole && item.kind !== 'final') mark(words[words.length - 1], optClass(item.answer) === 'plain' ? 'noun' : optClass(item.answer), whole);
 }
 
 function say(text, cls) {
@@ -837,7 +880,7 @@ function confetti(n) {
 // ---------------------------------------------------------------- وضع التجربة الفردي
 async function ensureSoloRoom() {
   const meta = await S.b.get(P.meta('0000'));
-  if (!meta) await S.api.createRoom(CONFIG.gameTitle, TOTAL, '0000');
+  if (!meta) await S.api.createRoom((LESSON && LESSON.title) || CONFIG.gameTitle, TOTAL, '0000');
   else if (meta.status !== 'waiting') await S.api.resetRoom('0000', meta);
 }
 
