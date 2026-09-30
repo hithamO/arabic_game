@@ -641,3 +641,24 @@ button { cursor: pointer; touch-action: manipulation; -webkit-user-select: none;
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
   .cloud, .dunes, .stars { animation: none !important; }
 }
+
+/* ------------------------------------------------ ألوان إضافية للدروس (الجملة والتركيب) */
+:root {
+  --teal: #0B8585; --teal-dark: #075F5F; --teal-soft: #D3F2F0;
+  --rose: #C3337A; --rose-dark: #8F1D56; --rose-soft: #FBE0EE;
+}
+.opt.teal { --c: var(--teal); --cd: var(--teal-dark); }
+.opt.rose { --c: var(--rose); --cd: var(--rose-dark); }
+.gate.harf { --c: var(--harf); --cd: var(--harf-dark); --soft: var(--harf-soft); }
+.gate.teal { --c: var(--teal); --cd: var(--teal-dark); --soft: var(--teal-soft); }
+.gate.rose { --c: var(--rose); --cd: var(--rose-dark); --soft: var(--rose-soft); }
+.sentence .w.key.teal { background: var(--teal-soft); box-shadow: inset 0 -6px 0 var(--teal); }
+.sentence .w.key.rose { background: var(--rose-soft); box-shadow: inset 0 -6px 0 var(--rose); }
+.sentence .w.teal .tag { background: var(--teal); }
+.sentence .w.rose .tag { background: var(--rose); }
+
+/* خيارات ثلاثية طويلة (مثل: شبه جملة جار ومجرور) — سطر واحد قدر الإمكان */
+.opts-3 .opt { font-size: clamp(19px, 1.6vw + 5px, 26px); padding-inline: 10px; gap: 8px; line-height: 1.3; }
+.kind-speed .opts-3 .opt { font-size: clamp(20px, 1.7vw + 6px, 28px); min-height: 96px; }
+.opts-3 .opt .chip { width: 36px; height: 36px; font-size: 17px; }
+@media (max-width: 700px) { .kind-speed .opts-3 .opt { min-height: 68px; } }
