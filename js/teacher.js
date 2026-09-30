@@ -4,12 +4,14 @@
 import { CONFIG } from './config.js';
 import {
   rankStudents, formatTime, esc, studentsLabel, duplicateNames, totalQuestions
-} from './game.js';
+} from './game.js?v=2';
+import * as Q from './questions.js?v=2';
 import { connect, makeApi, P, isDemo, isConfigured } from './firebase.js';
 import { AVATARS, avatarSVG } from './avatars.js';
 
 const $ = id => document.getElementById(id);
 const TOTAL = totalQuestions(CONFIG.stages);
+const LESSON = Q.LESSON || null;
 const STATUS_TXT = { waiting: 'بانتظار البدء', playing: 'اللعبة جارية', paused: 'متوقفة مؤقتاً', finished: 'انتهت الجولة' };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const medal = ['🥇', '🥈', '🥉'];
@@ -116,7 +118,7 @@ async function afterLogin() {
   }
   $('home-email').textContent = T.b.email || '';
   $('room-game').textContent = CONFIG.gameTitle;
-  if (!$('create-title').value) $('create-title').value = 'الجملة الاسمية والجملة الفعلية';
+  if (!$('create-title').value) $('create-title').value = (LESSON && LESSON.title) || 'الجملة الاسمية والجملة الفعلية';
 
   const saved = localStorage.getItem(roomKey());
   if (saved) {
