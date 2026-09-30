@@ -60,8 +60,17 @@ export function firstWord(text) {
   return (text || '').trim().split(/\s+/)[0].replace(/[.،؟!:«»]/g, '');
 }
 
-function makeExplain(stageKey, q) {
+function makeExplain(stageKey, q, lesson) {
   if (q.explain) return q.explain;
+  if (lesson && lesson.explain) {
+    const words = (q.text || '').trim().split(/\s+/).map(w => w.replace(/[.،؟!:«»]/g, ''));
+    const at = q.at | 0;
+    const fill = t => (t || '').replace(/\{text\}/g, (q.text || '').replace(/[.؟!]$/, ''))
+      .replace(/\{1\}/g, words[at] || '').replace(/\{2\}/g, words[at + 1] || '');
+    let out = fill(lesson.explain[q.answer]);
+    if (q.of && q.of !== q.answer && lesson.explain[q.of]) out += ' ' + fill(lesson.explain[q.of]);
+    return out.trim();
+  }
   const w = firstWord(q.text);
   if (stageKey === 'first') {
     if (q.answer === 'حرف') return `الكلمة الأولى «${w}» حرف.`;
@@ -72,11 +81,16 @@ function makeExplain(stageKey, q) {
     : `بدأت الجملة بالاسم «${w}»، فهي جملة اسمية.`;
 }
 
+// يدمج نصوص الدرس (العنوان والتلميح والخيارات) مع إعدادات المراحل في config.js
+export function mergeStages(configStages, lesson) {
+  return configStages.map((st, i) => Object.assign({}, st, (lesson && lesson.stages && lesson.stages[i]) || {}, { key: st.key, pick: st.pick }));
+}
+
 /**
  * يبني قائمة أسئلة الطالب: نفس عدد الأسئلة ونفس توزيع الصعوبة لكل الطلاب،
  * لكن باختيار وترتيب مختلفين. البذرة = رمز الغرفة + معرّف الطالب + رقم الجولة.
  */
-export function buildGame(seed, bank, stages) {
+export function buildGame(seed, bank, stages, lesson) {
   const rand = rng(seed);
   const items = [];
   stages.forEach((stage, sIdx) => {
@@ -98,18 +112,22 @@ export function buildGame(seed, bank, stages) {
     }
     for (const q of chosen) {
       let options;
-      if (stage.key === 'first') options = shuffle(WORD_OPTIONS, rand);
+      if (q.options) options = shuffle(q.options, rand);
+      else if (stage.options) options = stage.shuffle ? shuffle(stage.options, rand) : stage.options.slice();
+      else if (stage.key === 'first') options = shuffle(WORD_OPTIONS, rand);
       else if (stage.key === 'final') options = shuffle(q.options, rand);
       else options = TYPE_OPTIONS.slice(); // اسمية يميناً وفعلية يساراً دائماً — ثبات يساعد الطالب
       items.push({
         stage: sIdx,
         kind: stage.key,
         text: q.text || '',
-        question: q.question || (stage.key === 'first' ? 'ما نوع الكلمة التي بدأت بها الجملة؟' : 'ما نوع الجملة؟'),
+        of: q.of || null,
+        at: q.at | 0,
+        question: q.question || stage.question || (stage.key === 'first' ? 'ما نوع الكلمة التي بدأت بها الجملة؟' : 'ما نوع الجملة؟'),
         options,
         answer: q.answer,
         level: q.level,
-        explain: makeExplain(stage.key, q)
+        explain: makeExplain(stage.key, q, lesson)
       });
     }
   });
